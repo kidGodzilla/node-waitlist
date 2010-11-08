@@ -1,7 +1,9 @@
 var Waitlist = require('waitlist');
 var EventEmitter = require('events').EventEmitter;
 
-exports.simple = function (assert) {
+exports.comprehensive = function (assert) {
+    function Foo (x) { this.x = x }
+    
     var ws = new Waitlist;
     var counts = { resources : [], waiting : [] };
     ws.on('resources', function (n) {
@@ -91,4 +93,55 @@ exports.simple = function (assert) {
     }, 500);
 };
 
-function Foo (x) { this.x = x }
+exports.release = function (assert) {
+    var ws = new Waitlist;
+    
+    var resources = [];
+    ws.on('resources', function (n) {
+        resources.push(n);
+    });
+    
+    var waiting = [];
+    ws.on('waiting', function (n) {
+        waiting.push(n);
+    });
+    
+    var removed = [];
+    ws.on('remove', function (n) {
+        removed.push(n);
+    });
+    
+    ws.add('moo', {});
+    
+    var t1 = ws.acquire(50, function () {});
+    var t2 = ws.acquire(50, function () {});
+    
+    var em = new EventEmitter;
+    
+    em.on('token', function (t) {
+        setTimeout(function () {
+            assert.equal(token, t);
+        }, 1);
+    });
+    
+    var spots = [];
+    em.on('spot', function (n) {
+        spots.push(n);
+    });
+    
+    var token = ws.acquire(150, em.emit.bind(em));
+    setTimeout(function () {
+        ws.acquire(50, function () {});
+        ws.release(token);
+    }, 30);
+    
+    ws.release(t1);
+    
+    setTimeout(function () {
+        ws.release(token);
+        ws.remove('moo');
+        assert.deepEqual(spots, [ 2, 1, 1 ]);
+        assert.deepEqual(waiting, [ 1, 2, 1, 2, 1, 0 ]);
+        assert.deepEqual(resources, [ 1, 0 ]);
+    }, 100);
+};

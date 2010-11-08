@@ -42,6 +42,8 @@ function Resources () {
             });
             self.emit('waiting', queue.length);
         }
+        
+        return token;
     };
     
     self.release = function (token) {
@@ -90,6 +92,5 @@ function Resources () {
         }, ms);
         
         emit('available', res.resource, res.key, res.lease);
-        self.emit('resources', Hash(resources).length);
     }
 }
