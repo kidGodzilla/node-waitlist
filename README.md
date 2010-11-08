@@ -1,1 +1,1 @@
-Manage standing in queue for consumers of resources.
+Manage consumers standing in queue for resources.
