@@ -5,12 +5,15 @@ exports.comprehensive = function (assert) {
     function Foo (x) { this.x = x }
     
     var ws = new Waitlist;
-    var counts = { resources : [], waiting : [] };
+    var counts = { resources : [], waiting : [], using : [] };
     ws.on('resources', function (n) {
         counts.resources.push(n);
     });
     ws.on('waiting', function (n) {
         counts.waiting.push(n);
+    });
+    ws.on('using', function (n) {
+        counts.using.push(n);
     });
     
     [ 1, 2 ].forEach(function (i) {
@@ -20,6 +23,7 @@ exports.comprehensive = function (assert) {
     assert.deepEqual(counts, {
         resources : [ 1, 2 ],
         waiting : [],
+        using : []
     });
     
     var e1 = new EventEmitter;
@@ -56,10 +60,12 @@ exports.comprehensive = function (assert) {
         assert.equal(avail.length, 2);
         assert.equal(expired.length, 0);
         assert.deepEqual(counts.waiting, [ 1 ]);
+        assert.deepEqual(counts.using, [ 1, 2 ]);
     }, 25);
     
     setTimeout(function () {
         assert.deepEqual(counts.waiting, [ 1, 0, 0, 0 ]);
+        assert.deepEqual(counts.using, [ 1, 2, 2, 2, 1, 0 ]);
         assert.equal(avail.length, 3);
         assert.equal(expired.length, 3);
         assert.equal(spots.length, 1);
