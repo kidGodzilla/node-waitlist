@@ -46,6 +46,8 @@ function Resources () {
         return token;
     };
     
+    var using = 0;
+    
     self.release = function (token) {
         var i = queue.map(function (q) { return q.token }).indexOf(token);
         if (i >= 0) { // in the queue
@@ -66,6 +68,8 @@ function Resources () {
             res.lease = null;
             res.emit = null;
             
+            using -= 1;
+            
             var q = queue.shift();
             if (q) {
                 dispatch(res, q.token, q.time, q.emit);
@@ -74,6 +78,7 @@ function Resources () {
                 });
             }
             self.emit('waiting', queue.length);
+            self.emit('using', using);
         }
     };
     
@@ -92,5 +97,7 @@ function Resources () {
         }, ms);
         
         emit('available', res.resource, res.key, res.lease);
+        using += 1;
+        self.emit('using', using);
     }
 }
