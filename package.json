@@ -1,6 +1,6 @@
 {
     "name" : "waitlist",
-    "version" : "0.0.2",
+    "version" : "0.0.3",
     "description" : "Manage consumers standing in queue for resources.",
     "modules" : {
         "index" : "./index.js",
