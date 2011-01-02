@@ -30,7 +30,7 @@ exports.comprehensive = function (assert) {
     var e2 = new EventEmitter;
     var e3 = new EventEmitter;
     
-    var expired = [], avail = [], spots = [];
+    var expired = [], avail = [], spots = [], released = [];
     [ e1, e2, e3 ].forEach(function (e) {
         e.on('available', function (res, key, lease) {
             avail.push({
@@ -50,6 +50,12 @@ exports.comprehensive = function (assert) {
                 time : Date.now()
             });
         });
+        e.on('release', function () {
+            released.push({
+                em : e,
+                time : Date.now()
+            });
+        });
     });
     
     ws.acquire(150, e1.emit.bind(e1));
@@ -59,6 +65,7 @@ exports.comprehensive = function (assert) {
     setTimeout(function () {
         assert.equal(avail.length, 2);
         assert.equal(expired.length, 0);
+        assert.equal(released.length, 0);
         assert.deepEqual(counts.waiting, [ 1 ]);
         assert.deepEqual(counts.using, [ 1, 2 ]);
     }, 25);
@@ -68,6 +75,7 @@ exports.comprehensive = function (assert) {
         assert.deepEqual(counts.using, [ 1, 2, 2, 2, 1, 0 ]);
         assert.equal(avail.length, 3);
         assert.equal(expired.length, 3);
+        assert.equal(released.length, 3);
         assert.equal(spots.length, 1);
         
         assert.deepEqual(
@@ -80,18 +88,25 @@ exports.comprehensive = function (assert) {
             [ e2, e3, e1 ]
         );
         
+        assert.deepEqual(
+            released.map(function (x) { return x.em }),
+            [ e2, e3, e1 ]
+        );
+        
         assert.deepEqual(spots, [ { em : e3, spot : 1 } ]);
         
         var switched = [
-            { avail : avail[0], expired : expired[2] },
-            { avail : avail[1], expired : expired[0] },
-            { avail : avail[2], expired : expired[1] },
+            { avail : avail[0], expired : expired[2], released : expired[2] },
+            { avail : avail[1], expired : expired[0], released : expired[0] },
+            { avail : avail[2], expired : expired[1], released : expired[1] },
         ];
         
         switched.forEach(function (x) {
-            var elapsed = x.expired.time - x.avail.time;
+            var ea = x.expired.time - x.avail.time;
+            var ra = x.released.time - x.avail.time;
             var t = x.avail.lease.time;
-            assert.ok(Math.abs(elapsed - t) < 10); // 10 ms tolerance
+            assert.ok(Math.abs(ea - t) < 10); // 10 ms tolerance
+            assert.ok(Math.abs(ra - t) < 10); // 10 ms tolerance
         });
         
         var waited = switched[2].avail.time - switched[1].avail.time;

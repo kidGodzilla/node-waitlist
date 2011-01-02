@@ -25,8 +25,15 @@ function Resources () {
         self.emit('resources', Hash(resources).length);
     };
     
+    var tokens = {};
+    var emitters = {};
+    
     self.acquire = function (ms, emit) {
-        var token = Math.floor(Math.random() * Math.pow(2,32)).toString(16);
+        do {
+            var token = Math.floor(Math.random() * Math.pow(2,32)).toString(16);
+        } while (tokens[token]);
+        tokens[token] = true;
+        
         emit('token', token);
         
         var avail = Hash(resources).filter(function (res) {
@@ -48,6 +55,12 @@ function Resources () {
     };
     
     self.release = function (token) {
+        delete tokens[token];
+        if (emitters[token]) {
+            emitters[token]('release');
+        }
+        delete emitters[token];
+        
         var i = queue.map(function (q) { return q.token }).indexOf(token);
         if (i >= 0) { // in the queue
             queue.splice(i, 1);
@@ -90,6 +103,7 @@ function Resources () {
         res.lease.end = res.lease.start + ms;
         res.emit = emit;
         
+        emitters[token] = emit;
         if (ms > 0) {
             setTimeout(function () {
                 emit('expire');
