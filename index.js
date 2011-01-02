@@ -56,10 +56,6 @@ function Resources () {
     
     self.release = function (token) {
         delete tokens[token];
-        if (emitters[token]) {
-            emitters[token]('release');
-        }
-        delete emitters[token];
         
         var i = queue.map(function (q) { return q.token }).indexOf(token);
         if (i >= 0) { // in the queue
@@ -103,7 +99,6 @@ function Resources () {
         res.lease.end = res.lease.start + ms;
         res.emit = emit;
         
-        emitters[token] = emit;
         if (ms > 0) {
             setTimeout(function () {
                 emit('expire');
