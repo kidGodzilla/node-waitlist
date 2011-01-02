@@ -90,10 +90,12 @@ function Resources () {
         res.lease.end = res.lease.start + ms;
         res.emit = emit;
         
-        setTimeout(function () {
-            emit('expire');
-            self.release(token);
-        }, ms);
+        if (ms > 0) {
+            setTimeout(function () {
+                emit('expire');
+                self.release(token);
+            }, ms);
+        }
         
         emit('available', res.resource, res.key, res.lease);
         self.using += 1;
