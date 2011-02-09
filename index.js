@@ -1,5 +1,5 @@
 var EventEmitter = require('events').EventEmitter;
-var Hash = require('traverse/hash');
+var Hash = require('hashish');
 
 module.exports = Resources;
 Resources.prototype = new EventEmitter;

@@ -1,13 +1,25 @@
 {
     "name" : "waitlist",
-    "version" : "0.0.4",
+    "version" : "0.0.5",
     "description" : "Manage consumers standing in queue for resources.",
-    "modules" : {
-        "index" : "./index.js",
-    },
+    "main" : "./index.js",
     "repository" : {
         "type" : "git",
         "url" : "http://github.com/substack/node-waitlist.git"
+    },
+    "author" : {
+        "name" : "James Halliday",
+        "email" : "mail@substack.net",
+        "url" : "http://substack.net"
+    },
+    "dependencies" : {
+        "hashish" : ">=0.0.1"
+    },
+    "devDependencies" : {
+        "expresso" : ">=0.6.0"
+    },
+    "scripts" : {
+        "test" : "expresso"
     },
     "license" : "MIT/X11",
     "engine" : ["node >=0.2.0"]
