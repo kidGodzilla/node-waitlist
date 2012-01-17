@@ -93,6 +93,9 @@ If `time` is 0, the session won't expire automatically.
 
 Resource events will be passed through the `emit` function supplied.
 
+The available resource that was last used the longest time ago will be favored
+in computing which resource to deliver.
+
 ws.release(token)
 -----------------
 
