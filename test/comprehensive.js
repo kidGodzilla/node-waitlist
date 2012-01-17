@@ -6,26 +6,19 @@ test('comprehensive', function (t) {
     function Foo (x) { this.x = x }
     
     var ws = new Waitlist;
-    var counts = { resources : [], waiting : [], using : [] };
-    ws.on('resources', function (n) {
-        counts.resources.push(n);
-    });
-    ws.on('waiting', function (n) {
-        counts.waiting.push(n);
-    });
-    ws.on('using', function (n) {
-        counts.using.push(n);
+    var counts = [];
+    ws.on('stats', function (s) {
+        counts.push(JSON.parse(JSON.stringify(s)));
     });
     
     [ 1, 2 ].forEach(function (i) {
         ws.add(i, new Foo(i * 10));
     });
     
-    t.deepEqual(counts, {
-        resources : [ 1, 2 ],
-        waiting : [],
-        using : []
-    });
+    t.deepEqual(counts, [
+        { resources : 1, waiting : 0, using : 0 },
+        { resources : 2, waiting : 0, using : 0 },
+    ]);
     
     var e1 = new EventEmitter;
     var e2 = new EventEmitter;
@@ -67,13 +60,19 @@ test('comprehensive', function (t) {
         t.equal(avail.length, 2);
         t.equal(expired.length, 0);
         t.equal(released.length, 0);
-        t.deepEqual(counts.waiting, [ 1 ]);
-        t.deepEqual(counts.using, [ 1, 2 ]);
+        t.deepEqual(counts.slice(2), [
+            { resources : 2, waiting : 0, using : 1 },
+            { resources : 2, waiting : 0, using : 2 },
+            { resources : 2, waiting : 1, using : 2 },
+        ]);
     }, 25);
     
     setTimeout(function () {
-        t.deepEqual(counts.waiting, [ 1, 0, 0, 0 ]);
-        t.deepEqual(counts.using, [ 1, 2, 2, 2, 1, 0 ]);
+        t.deepEqual(counts.slice(5), [
+            { resources : 2, waiting : 0, using : 2 },
+            { resources : 2, waiting : 0, using : 1 },
+            { resources : 2, waiting : 0, using : 0 },
+        ]);
         t.equal(avail.length, 3);
         t.equal(expired.length, 3);
         t.equal(released.length, 3);

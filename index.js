@@ -31,6 +31,7 @@ Resources.prototype.add = function (key, res) {
 
 Resources.prototype.remove = function (key) {
     delete this.resources[key];
+    this.stats.resources --;
     this.emit('stats', this.stats);
 };
 
@@ -46,18 +47,21 @@ Resources.prototype.acquire = function (ms, emit) {
     
     emit('token', token);
     
-    var avail = Object.keys(self.resources).filter(function (key) {
-        return self.resources[key].lease === null;
+    var avail = hash.detect(self.resources, function (r) {
+        return r.lease === null;
     });
     
-    if (avail.length > 0) {
-        self.dispatch(token, avail.values[0]);
+    if (avail) {
+        self.dispatch(token, avail);
+        self.emit('stats', self.stats);
     }
     else {
         self.queue.push(token);
         self.queue.forEach(function (id, i) {
             self.sessions[id].emit('spot', i + 1, self.queue.length);
         });
+        
+        self.stats.waiting ++;
         self.emit('stats', self.stats);
     }
     
@@ -66,7 +70,7 @@ Resources.prototype.acquire = function (ms, emit) {
 
 Resources.prototype.release = function (token) {
     var self = this;
-    delete self.tokens[token];
+    delete self.sessions[token];
     
     var ix = self.queue.indexOf(token);
     if (ix >= 0) {
@@ -76,13 +80,13 @@ Resources.prototype.release = function (token) {
             self.sessions[id].emit('spot', j + 1, self.queue.length);
         });
         
-        self.stats.waiting -= 1;
+        self.stats.waiting --;
         self.emit('stats', self.stats);
         
         return;
     }
     
-    var res = hash(resources).detect(function (r) {
+    var res = hash.detect(self.resources, function (r) {
         return r.lease && r.lease.token == token
     });
     
@@ -91,11 +95,12 @@ Resources.prototype.release = function (token) {
         res.lease = null;
         res.emit = null;
         
-        self.stats.using -= 1;
+        self.stats.using --;
         
-        var q = queue.shift();
+        var q = self.queue.shift();
         if (q) {
-            self.dispatch(q.token, res);
+            self.stats.waiting --;
+            self.dispatch(q, res);
             self.queue.forEach(function (id, i) {
                 self.sessions[id].emit('spot', i + 1, self.queue.length);
             });
@@ -113,17 +118,16 @@ Resources.prototype.dispatch = function (token, res) {
         time : session.time,
         token : token,
     };
-    res.lease.end = res.lease.start + ms;
+    res.lease.end = res.lease.start + session.time;
     res.emit = session.emit;
     
     if (session.time > 0) {
         setTimeout(function () {
-            emit('expire');
+            session.emit('expire');
             self.release(token);
         }, session.time);
     }
     
     session.emit('available', res.resource, res.key, res.lease);
-    self.stats.using += 1;
-    self.emit('stats', self.stats);
+    self.stats.using ++;
 };
