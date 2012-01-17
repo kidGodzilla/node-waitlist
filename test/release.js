@@ -1,23 +1,13 @@
 var test = require('tap').test;
-var Waitlist = require('waitlist');
+var Waitlist = require('../');
 var EventEmitter = require('events').EventEmitter;
 
 test('release', function (t) {
     var ws = new Waitlist;
     
-    var resources = [];
-    ws.on('resources', function (n) {
-        resources.push(n);
-    });
-    
-    var waiting = [];
-    ws.on('waiting', function (n) {
-        waiting.push(n);
-    });
-    
-    var removed = [];
-    ws.on('remove', function (n) {
-        removed.push(n);
+    var stats = [];
+    ws.on('stats', function (s) {
+        stats.push(JSON.parse(JSON.stringify(s)));
     });
     
     ws.add('moo', {});
@@ -50,9 +40,17 @@ test('release', function (t) {
         ws.release(token);
         ws.remove('moo');
         t.deepEqual(spots, [ 2, 1, 1 ]);
-        t.deepEqual(waiting, [ 1, 2, 1, 2, 1, 0 ]);
-        t.deepEqual(resources, [ 1, 0 ]);
+        t.deepEqual(stats, [
+            { resources : 1, waiting : 0, using : 0 },
+            { resources : 1, waiting : 0, using : 1 },
+            { resources : 1, waiting : 1, using : 1 },
+            { resources : 1, waiting : 2, using : 1 },
+            { resources : 1, waiting : 1, using : 1 },
+            { resources : 1, waiting : 2, using : 1 },
+            { resources : 1, waiting : 1, using : 1 },
+            { resources : 1, waiting : 0, using : 1 },
+            { resources : 0, waiting : 0, using : 1 },
+        ]);
         t.end();
     }, 100);
 });
-

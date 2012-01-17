@@ -74,9 +74,9 @@ Resources.prototype.release = function (token) {
     
     var ix = self.queue.indexOf(token);
     if (ix >= 0) {
-        queue.splice(ix, 1);
+        self.queue.splice(ix, 1);
         
-        queue.forEach(function (id, j) {
+        self.queue.forEach(function (id, j) {
             self.sessions[id].emit('spot', j + 1, self.queue.length);
         });
         
