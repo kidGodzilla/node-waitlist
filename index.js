@@ -7,8 +7,17 @@ function Resources () {
     if (!(this instanceof Resources)) return new Resources();
     var self = this;
     var resources = self.resources = {};
+    
     var queue = self.queue = [];
     self.using = 0;
+    
+    self.stats = function () {
+        return {
+            resources : Object.keys(resources).length,
+            waiting : queue.length,
+            using : self.using,
+        };
+    };
     
     self.add = function (key, res) {
         resources[key] = {
@@ -17,12 +26,12 @@ function Resources () {
             lease : null,
             emit : null,
         };
-        self.emit('resources', Hash(resources).length);
+        self.emit('stats', self.stats());
     };
     
     self.remove = function (key) {
         delete resources[key];
-        self.emit('resources', Hash(resources).length);
+        self.emit('stats', self.stats());
     };
     
     var tokens = {};
@@ -48,7 +57,7 @@ function Resources () {
             queue.forEach(function (x, i) {
                 x.emit('spot', i + 1, queue.length);
             });
-            self.emit('waiting', queue.length);
+            self.emit('stats', self.stats());
         }
         
         return token;
@@ -63,7 +72,7 @@ function Resources () {
             queue.forEach(function (x, j) {
                 x.emit('spot', j + 1, queue.length);
             });
-            self.emit('waiting', queue.length);
+            self.emit('stats', self.stats());
             return;
         }
         
@@ -85,8 +94,7 @@ function Resources () {
                     x.emit('spot', i + 1, queue.length);
                 });
             }
-            self.emit('waiting', queue.length);
-            self.emit('using', self.using);
+            self.emit('stats', self.stats());
         }
     };
     
@@ -108,6 +116,6 @@ function Resources () {
         
         emit('available', res.resource, res.key, res.lease);
         self.using += 1;
-        self.emit('using', self.using);
+        self.emit('stats', self.stats());
     }
 }
