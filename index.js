@@ -24,6 +24,7 @@ Resources.prototype.add = function (key, res) {
         resource : res,
         lease : null,
         emit : null,
+        last : 0,
     };
     this.stats.resources ++;
     this.emit('stats', this.stats);
@@ -47,12 +48,21 @@ Resources.prototype.acquire = function (ms, emit) {
     
     emit('token', token);
     
-    var avail = hash.detect(self.resources, function (r) {
-        return r.lease === null;
-    });
+    var avail = Object.keys(self.resources)
+        .filter(function (name) {
+            return self.resources[name].lease === null
+        })
+        .sort(function (a, b) {
+            var a_ = self.resources[a].last;
+            var b_ = self.resources[b].last;
+            if (a_ === b_) return 0;
+            return a_ > b_ ? 1 : -1;
+        })
+        [0]
+    ;
     
     if (avail) {
-        self.dispatch(token, avail);
+        self.dispatch(token, self.resources[avail]);
         self.emit('stats', self.stats);
     }
     else {
@@ -119,6 +129,7 @@ Resources.prototype.dispatch = function (token, res) {
         token : token,
     };
     res.lease.end = res.lease.start + session.time;
+    res.last = Date.now();
     res.emit = session.emit;
     
     if (session.time > 0) {
