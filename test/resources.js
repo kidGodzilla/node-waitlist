@@ -1,7 +1,8 @@
+var test = require('tap').test;
 var Waitlist = require('waitlist');
 var EventEmitter = require('events').EventEmitter;
 
-exports.comprehensive = function (assert) {
+test('comprehensive', function (t) {
     function Foo (x) { this.x = x }
     
     var ws = new Waitlist;
@@ -20,7 +21,7 @@ exports.comprehensive = function (assert) {
         ws.add(i, new Foo(i * 10));
     });
     
-    assert.deepEqual(counts, {
+    t.deepEqual(counts, {
         resources : [ 1, 2 ],
         waiting : [],
         using : []
@@ -63,37 +64,37 @@ exports.comprehensive = function (assert) {
     ws.acquire(50, e3.emit.bind(e3));
     
     setTimeout(function () {
-        assert.equal(avail.length, 2);
-        assert.equal(expired.length, 0);
-        assert.equal(released.length, 0);
-        assert.deepEqual(counts.waiting, [ 1 ]);
-        assert.deepEqual(counts.using, [ 1, 2 ]);
+        t.equal(avail.length, 2);
+        t.equal(expired.length, 0);
+        t.equal(released.length, 0);
+        t.deepEqual(counts.waiting, [ 1 ]);
+        t.deepEqual(counts.using, [ 1, 2 ]);
     }, 25);
     
     setTimeout(function () {
-        assert.deepEqual(counts.waiting, [ 1, 0, 0, 0 ]);
-        assert.deepEqual(counts.using, [ 1, 2, 2, 2, 1, 0 ]);
-        assert.equal(avail.length, 3);
-        assert.equal(expired.length, 3);
-        assert.equal(released.length, 3);
-        assert.equal(spots.length, 1);
+        t.deepEqual(counts.waiting, [ 1, 0, 0, 0 ]);
+        t.deepEqual(counts.using, [ 1, 2, 2, 2, 1, 0 ]);
+        t.equal(avail.length, 3);
+        t.equal(expired.length, 3);
+        t.equal(released.length, 3);
+        t.equal(spots.length, 1);
         
-        assert.deepEqual(
+        t.deepEqual(
             avail.map(function (x) { return x.em }),
             [ e1, e2, e3 ]
         );
         
-        assert.deepEqual(
+        t.deepEqual(
             expired.map(function (x) { return x.em }),
             [ e2, e3, e1 ]
         );
         
-        assert.deepEqual(
+        t.deepEqual(
             released.map(function (x) { return x.em }),
             [ e2, e3, e1 ]
         );
         
-        assert.deepEqual(spots, [ { em : e3, spot : 1 } ]);
+        t.deepEqual(spots, [ { em : e3, spot : 1 } ]);
         
         var switched = [
             { avail : avail[0], expired : expired[2], released : expired[2] },
@@ -104,17 +105,19 @@ exports.comprehensive = function (assert) {
         switched.forEach(function (x) {
             var ea = x.expired.time - x.avail.time;
             var ra = x.released.time - x.avail.time;
-            var t = x.avail.lease.time;
-            assert.ok(Math.abs(ea - t) < 10); // 10 ms tolerance
-            assert.ok(Math.abs(ra - t) < 10); // 10 ms tolerance
+            var tt = x.avail.lease.time;
+            t.ok(Math.abs(ea - tt) < 10); // 10 ms tolerance
+            t.ok(Math.abs(ra - tt) < 10); // 10 ms tolerance
         });
         
         var waited = switched[2].avail.time - switched[1].avail.time;
-        assert.ok(waited < 60 && waited >= 50, 'resource available after 50ms');
+        t.ok(waited < 60 && waited >= 50, 'resource available after 50ms');
+        
+        t.end();
     }, 500);
-};
+});
 
-exports.release = function (assert) {
+test('release', function (t) {
     var ws = new Waitlist;
     
     var resources = [];
@@ -139,9 +142,9 @@ exports.release = function (assert) {
     
     var em = new EventEmitter;
     
-    em.on('token', function (t) {
+    em.on('token', function (tt) {
         setTimeout(function () {
-            assert.equal(token, t);
+            t.equal(token, tt);
         }, 1);
     });
     
@@ -161,13 +164,14 @@ exports.release = function (assert) {
     setTimeout(function () {
         ws.release(token);
         ws.remove('moo');
-        assert.deepEqual(spots, [ 2, 1, 1 ]);
-        assert.deepEqual(waiting, [ 1, 2, 1, 2, 1, 0 ]);
-        assert.deepEqual(resources, [ 1, 0 ]);
+        t.deepEqual(spots, [ 2, 1, 1 ]);
+        t.deepEqual(waiting, [ 1, 2, 1, 2, 1, 0 ]);
+        t.deepEqual(resources, [ 1, 0 ]);
+        t.end();
     }, 100);
-};
+});
 
-exports.zero = function (assert) {
+test('zero', function (t) {
     var ws = new Waitlist;
     ws.add('zing', {});
     
@@ -184,8 +188,9 @@ exports.zero = function (assert) {
     var t1 = ws.acquire(0, em.emit.bind(em));
     
     setTimeout(function () {
-        assert.eql(counts.available, 1);
-        assert.eql(counts.expire, 0);
+        t.equal(counts.available, 1);
+        t.equal(counts.expire, 0);
         ws.remove('zing');
+        t.end();
     }, 100);
-};
+});
