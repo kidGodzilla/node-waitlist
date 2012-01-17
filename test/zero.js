@@ -1,5 +1,5 @@
 var test = require('tap').test;
-var Waitlist = require('waitlist');
+var Waitlist = require('../');
 var EventEmitter = require('events').EventEmitter;
 
 test('zero', function (t) {
